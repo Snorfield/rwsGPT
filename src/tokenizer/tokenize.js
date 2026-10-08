@@ -54,7 +54,7 @@ function letter(character) {
 function ruleset(w, x, y, z) {
     if (y === null) return false;
     if (space(y)) return false;
-    if (space(w) && symbol(x) && (letter(y) || (y === null))) return false;
+    if (space(w) && symbol(x) && letter(y)) return false;
     if (letter(x) && symbol(y) && (symbol(z) || space(z) || (z === null))) return false;
     return true;
 }
