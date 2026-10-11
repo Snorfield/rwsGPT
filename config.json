@@ -1,0 +1,16 @@
+{
+  "token": "",
+  "client": "",
+  "sources": [
+    {
+      "color": "#FFFFFF",
+      "name": "name",
+      "path": "./path"
+    },
+    {
+      "color": "#FFFFFF",
+      "name": "name2",
+      "path": "./path1"
+    }
+  ]
+}
