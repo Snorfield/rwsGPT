@@ -59,11 +59,11 @@ export default class Model {
 
     connect(context, token, owner) {
 
-        // Id of the token
-        let tokenId = this.instantiate(token, owner);
-
         // Id of the context
         let contextId = this.instantiate(context, owner)
+
+        // Id of the token
+        let tokenId = this.instantiate(token, owner);
 
         let connection = this.connections.get(contextId);
 
@@ -104,5 +104,73 @@ export default class Model {
                 this.connect(context, token, owner);
             }
         }
+    }
+
+    /**
+     * Build model from all context values in the range 1 to max
+     * @param {array} array 
+     * @param {integer} max 
+     * @param {integer} owner 
+     */
+
+    assemble(array, max, owner) {
+        const context = Math.min(array.length - 1, max);
+
+        if (context > 0) {
+            for (let i = 1; i <= max; i++) {
+                this.build(array, i, owner);
+            }
+        }
+    }
+
+    /**
+     * Deserialize from a valid json string
+     * @param {string} json 
+     * @returns {Model}
+     */
+
+    static deserialize(json) {
+        json = JSON.parse(json);
+
+        if (!json.tokens || !json.connections) {
+            throw new Error('Fatal error: Field(s) missing from JSON')
+        };
+
+        const model = new Model();
+
+        model.tokens = json.tokens;
+        model.owners = json.owners;
+
+        for (let i = 0; i < model.tokens.length; i++) {
+            model.lookup.set(model.tokens[i], i);
+        }
+
+        for (const values of json.connections) {
+            const transitions = new Map();
+            for (let i = 1; i < values.length; i += 2) {
+                transitions.set(values[i], values[i + 1]);
+            }
+            model.connections.set(values[0], transitions);
+        }
+
+        return model;
+    }
+
+    /**
+     * Serialize the model into a string
+     * @returns {string}
+     */
+
+    serialize() {
+        let model = { version: 1.0, owners: this.owners, tokens: this.tokens, connections: [] };
+        for (const [key, value] of this.connections) {
+            let transitions = [key];
+            for (const [token, count] of value) {
+                transitions.push(...[token, count]);
+            }
+            model.connections.push(transitions);
+        }
+
+        return JSON.stringify(model);
     }
 }
