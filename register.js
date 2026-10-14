@@ -12,6 +12,15 @@ const commands = [
         ])
         .toJSON(),
     new SlashCommandBuilder()
+        .setName('key')
+        .setDescription('See user\'s colors')
+        .setContexts([
+            InteractionContextType.Guild,
+            InteractionContextType.BotDM,
+            InteractionContextType.PrivateChannel
+        ])
+        .toJSON(),
+    new SlashCommandBuilder()
         .setName('generate')
         .setDescription('Predict the next tokens based on the seed string')
         .setContexts([
