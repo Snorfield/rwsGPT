@@ -88,25 +88,6 @@ function getANSI(r, g, b) {
     return `\u001b[38;2;${r};${g};${b}m`
 }
 
-function getANSIGradient(colors, text) {
-    const characters = Array.from(text);
-    if (characters.length === 0 || colors.length === 0) return '';
-
-    const lastColor = colors.length - 1;
-    return characters.map((character, index) => {
-        const position = characters.length === 1 ? 0.5 : index / (characters.length - 1);
-        const segment = Math.min(Math.floor(position * lastColor), lastColor - 1);
-        const amount = position * lastColor - segment;
-        const color = colors.length === 1
-            ? colors[0]
-            : colors[segment].map((channel, channelIndex) =>
-                Math.round(channel + (colors[segment + 1][channelIndex] - channel) * amount)
-            );
-
-        return `${getANSI(color[0], color[1], color[2])}${character}`;
-    }).join('');
-}
-
 function resetANSI() {
     return "\u001b[0m";
 }
@@ -131,7 +112,6 @@ async function generate(interaction) {
                     // Use a random applicable user's color
                     const rgb = hexToRgb(model.owners[token[1][Math.floor(token[1].length * Math.random())]][0]);
                     string += `${getANSI(rgb[0], rgb[1], rgb[2])}${token[0]}`
-                    // getANSIGradient(token[1].map(x => hexToRgb(model.owners[x][0])), token[0])
                 } else {
                     const rgb = hexToRgb(model.owners[token[1][0]][0]);
                     string += `${getANSI(rgb[0], rgb[1], rgb[2])}${token[0]}`
@@ -193,8 +173,21 @@ async function owner(interaction) {
     }
 }
 
+async function key(interaction) {
+    let text = '';
+    const codeblock = '\`\`\`'
+
+    for (const owner of model.owners) {
+        const rgb = hexToRgb(owner[0]);
+        text += `${getANSI(rgb[0], rgb[1], rgb[2])}${owner[1]} █${resetANSI()}`
+    }
+
+    interaction.reply(`${codeblock}ansi\n${text}${codeblock}`);
+}
+
 module.exports = {
     generate,
     ping,
-    owner
+    owner,
+    key
 };
