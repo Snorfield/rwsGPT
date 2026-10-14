@@ -2,6 +2,7 @@ class Model {
     constructor() {
         this.tokens = [];
         this.connections = new Map();
+        this.connectionOwners = new Map();
         this.lookup = new Map();
         this.owners = [];
     }
@@ -73,6 +74,20 @@ class Model {
         }
 
         connection.set(tokenId, (connection.get(tokenId) ?? 0) + 1);
+
+        let ownerConnections = this.connectionOwners.get(contextId);
+        if (!ownerConnections) {
+            ownerConnections = new Map();
+            this.connectionOwners.set(contextId, ownerConnections);
+        }
+
+        let tokenOwners = ownerConnections.get(tokenId);
+        if (!tokenOwners) {
+            tokenOwners = new Map();
+            ownerConnections.set(tokenId, tokenOwners);
+        }
+
+        tokenOwners.set(owner, (tokenOwners.get(owner) ?? 0) + 1);
     }
 
     /**
@@ -153,6 +168,15 @@ class Model {
             model.connections.set(values[0], transitions);
         }
 
+        for (const values of json.connectionOwners ?? []) {
+            const [contextId, ...tokenEntries] = values;
+            const ownerConnections = new Map();
+            for (const [tokenId, owners] of tokenEntries) {
+                ownerConnections.set(tokenId, new Map(owners));
+            }
+            model.connectionOwners.set(contextId, ownerConnections);
+        }
+
         return model;
     }
 
@@ -162,13 +186,21 @@ class Model {
      */
 
     serialize() {
-        let model = { version: 1.0, owners: this.owners, tokens: this.tokens, connections: [] };
+        let model = { version: 2.0, owners: this.owners, tokens: this.tokens, connections: [], connectionOwners: [] };
         for (const [key, value] of this.connections) {
             let transitions = [key];
             for (const [token, count] of value) {
                 transitions.push(...[token, count]);
             }
             model.connections.push(transitions);
+        }
+
+        for (const [contextId, tokenEntries] of this.connectionOwners) {
+            const owners = [contextId];
+            for (const [tokenId, tokenOwners] of tokenEntries) {
+                owners.push([tokenId, [...tokenOwners]]);
+            }
+            model.connectionOwners.push(owners);
         }
 
         return JSON.stringify(model);
@@ -229,6 +261,69 @@ class Model {
         } else {
             return null;
         }
+    }
+
+    predictWithOwner(id, type, currentOwner = null, continuationContextForToken = () => null, sourceStickiness = 3) {
+        const ownerConnections = this.connectionOwners.get(id);
+        if (!ownerConnections) {
+            return null;
+        }
+
+        let candidates = [];
+        for (const [tokenId, owners] of ownerConnections) {
+            for (const [owner, count] of owners) {
+                candidates.push({ tokenId, owner, count });
+            }
+        }
+
+        const continuingCandidates = candidates.filter(candidate => {
+            const nextContextId = continuationContextForToken(candidate.tokenId);
+            const nextConnections = this.connectionOwners.get(nextContextId);
+            return nextConnections
+                ? [...nextConnections.values()].some(owners => owners.has(candidate.owner))
+                : false;
+        });
+        if (continuingCandidates.length > 0) {
+            candidates = continuingCandidates;
+        }
+
+        if (candidates.length === 0) {
+            return null;
+        }
+
+        const stickiness = Number.isFinite(sourceStickiness) ? Math.max(1, sourceStickiness) : 3;
+        const candidateWeight = candidate =>
+            (type === 0 ? 1 : candidate.count) * (candidate.owner === currentOwner ? stickiness : 1);
+
+        let selected;
+        if (type === 0) {
+            const total = candidates.reduce((sum, candidate) => sum + candidateWeight(candidate), 0);
+            let random = Math.random() * total;
+            for (const candidate of candidates) {
+                random -= candidateWeight(candidate);
+                if (random < 0) {
+                    selected = candidate;
+                    break;
+                }
+            }
+        } else if (type === 1) {
+            const total = candidates.reduce((sum, candidate) => sum + candidateWeight(candidate), 0);
+            let random = Math.random() * total;
+            for (const candidate of candidates) {
+                random -= candidateWeight(candidate);
+                if (random < 0) {
+                    selected = candidate;
+                    break;
+                }
+            }
+        } else if (type === 2) {
+            selected = candidates.reduce((best, candidate) =>
+                candidateWeight(candidate) > candidateWeight(best) ? candidate : best);
+        } else {
+            throw new Error(`Unknown type: ${type}`);
+        }
+
+        return { token: selected.tokenId, owner: selected.owner };
     }
 }
 
