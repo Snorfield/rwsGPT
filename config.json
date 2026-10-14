@@ -1,7 +1,8 @@
 {
     "token": "",
     "clientId": "",
-    "contextLimit": 5,
+    "contextLimit": 4,
+    "sourceStickiness": 3,
     "sources": [
         {
             "color": "#4284f5",
