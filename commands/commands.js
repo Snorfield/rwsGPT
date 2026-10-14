@@ -157,7 +157,7 @@ async function owner(interaction) {
             string.toLowerCase(),
             ' ' + string,
             string.toUpperCase(),
-            string.trim
+            string.trim()
         ]
 
         for (const variant of variants) {
