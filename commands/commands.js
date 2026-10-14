@@ -179,7 +179,7 @@ async function key(interaction) {
 
     for (const owner of model.owners) {
         const rgb = hexToRgb(owner[0]);
-        text += `${getANSI(rgb[0], rgb[1], rgb[2])}${owner[1]} █${resetANSI()}`
+        text += `${getANSI(rgb[0], rgb[1], rgb[2])}${owner[1]} █${resetANSI()}\n`
     }
 
     interaction.reply(`${codeblock}ansi\n${text}${codeblock}`);
