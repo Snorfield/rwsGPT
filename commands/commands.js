@@ -183,7 +183,7 @@ async function generate(interaction) {
             }
         }
         if (activeColor !== null) string += resetANSI();
-        interaction.reply(`${codeblock}ansi\n${string}${codeblock}`);
+        interaction.reply({ content: `${codeblock}ansi\n${string}${codeblock}`, allowedMentions: { parse: [] } });
     } else {
         const array = tokens.map((token) => {
             if (Array.isArray(token)) {
@@ -192,7 +192,7 @@ async function generate(interaction) {
                 return token;
             }
         });
-        interaction.reply(array.join(''));
+        interaction.reply({ content: array.join(''), allowedMentions: { parse: [] } });
     }
 }
 
@@ -215,7 +215,7 @@ async function owner(interaction) {
     }
 
     if (id !== null) {
-        return interaction.reply(message(id, false));
+        return interaction.reply({ content: message(id, false), allowedMentions: { parse: [] } });
     } else {
 
         const variants = [
@@ -228,7 +228,7 @@ async function owner(interaction) {
         for (const variant of variants) {
             let variantId = model.id(variant);
             if (variantId !== null) {
-                return interaction.reply(message(variantId, true));
+                return interaction.reply({ content: message(variantId, true), allowedMentions: { parse: [] } });
             }
         }
 
