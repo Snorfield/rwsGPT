@@ -1,6 +1,10 @@
 {
-  "scripts": {
-    "start": "node src/index.js"
+  "dependencies": {
+    "discord.js": "^14.26.4"
   },
-  "type": "module"
+  "scripts": {
+    "start": "node index.js",
+    "register": "node register.js",
+    "train": "node train.js"
+  }
 }
