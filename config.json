@@ -1,16 +1,12 @@
 {
-  "token": "",
-  "client": "",
-  "sources": [
-    {
-      "color": "#FFFFFF",
-      "name": "name",
-      "path": "./path"
-    },
-    {
-      "color": "#FFFFFF",
-      "name": "name2",
-      "path": "./path1"
-    }
-  ]
+    "token": "",
+    "clientId": "",
+    "contextLimit": 5,
+    "sources": [
+        {
+            "color": "#4284f5",
+            "name": "source1",
+            "path": "./data/thing.json"
+        }
+    ]
 }
