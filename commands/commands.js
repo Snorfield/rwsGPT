@@ -128,8 +128,10 @@ async function generate(interaction) {
         for (const token of tokens) {
             if (Array.isArray(token)) {
                 if (token[1].length >= 2) {
-                    // Make a gradient
-                    string += getANSIGradient(token[1].map(x => hexToRgb(model.owners[x][0])), token[0])
+                    // Use a random applicable user's color
+                    const rgb = hexToRgb(model.owners[token[1][Math.floor(token[1].length * Math.random())]][0]);
+                    string += `${getANSI(rgb[0], rgb[1], rgb[2])}${token[0]}`
+                    // getANSIGradient(token[1].map(x => hexToRgb(model.owners[x][0])), token[0])
                 } else {
                     const rgb = hexToRgb(model.owners[token[1][0]][0]);
                     string += `${getANSI(rgb[0], rgb[1], rgb[2])}${token[0]}`
