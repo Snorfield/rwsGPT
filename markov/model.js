@@ -206,8 +206,14 @@ class Model {
         return JSON.stringify(model);
     }
 
-    predict(id, type) {
-        const connections = this.connections.get(id);
+    predict(id, type, previousTokenId = null) {
+        let connections = this.connections.get(id);
+        const previousText = this.token(previousTokenId)?.[0].trim().toLowerCase();
+        if (connections && previousText && connections.size > 1) {
+            const alternatives = new Map([...connections].filter(([tokenId]) =>
+                this.token(tokenId)[0].trim().toLowerCase() !== previousText));
+            if (alternatives.size > 0) connections = alternatives;
+        }
 
         // Type 0 returns a random key regardless of weight
         function weightless() {
@@ -263,7 +269,7 @@ class Model {
         }
     }
 
-    predictWithOwner(id, type, currentOwner = null, continuationContextForToken = () => null, sourceStickiness = 3) {
+    predictWithOwner(id, type, currentOwner = null, continuationContextForToken = () => null, sourceStickiness = 3, previousTokenId = null) {
         const ownerConnections = this.connectionOwners.get(id);
         if (!ownerConnections) {
             return null;
@@ -285,6 +291,13 @@ class Model {
         });
         if (continuingCandidates.length > 0) {
             candidates = continuingCandidates;
+        }
+
+        const previousText = this.token(previousTokenId)?.[0].trim().toLowerCase();
+        if (previousText) {
+            const alternatives = candidates.filter(candidate =>
+                this.token(candidate.tokenId)[0].trim().toLowerCase() !== previousText);
+            if (alternatives.length > 0) candidates = alternatives;
         }
 
         if (candidates.length === 0) {
