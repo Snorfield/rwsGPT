@@ -94,9 +94,10 @@ function markov(seed, recall, limit, type, trackOwner = false) {
             return null;
         };
 
+        const previousTokenId = model.id(tokens[tokens.length - 1]);
         const prediction = trackOwner
-            ? model.predictWithOwner(id, type, activeOwner, continuationContextForToken, sourceStickiness)
-            : model.predict(id, type);
+            ? model.predictWithOwner(id, type, activeOwner, continuationContextForToken, sourceStickiness, previousTokenId)
+            : model.predict(id, type, previousTokenId);
 
         // if not null (prediction will always return null if there isn't one), then add the token value to the tokens
         if (prediction !== null) {
