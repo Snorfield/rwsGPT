@@ -2,7 +2,7 @@
     "token": "",
     "clientId": "",
     "contextLimit": 4,
-    "sourceStickiness": 3,
+    "stickiness": 3,
     "sources": [
         {
             "color": "#4284f5",
