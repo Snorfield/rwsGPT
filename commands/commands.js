@@ -2,7 +2,6 @@ const Model = require('../markov/model.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const tokenize = require('../tokenizer/tokenize.js');
-const { sourceStickiness = 3 } = require('../config.json');
 
 const model = Model.deserialize(fs.readFileSync(path.join(__dirname, '../model.rwsm'), 'utf-8'));
 
@@ -21,12 +20,11 @@ function hexToRgb(hex) {
     ];
 }
 
-function markov(seed, recall, limit, type, trackOwner = false) {
+function markov(seed, recall, limit, type) {
 
     // inital tokens
     let tokens = tokenize(seed);
     let raw = [...tokens];
-    let activeOwner = null;
 
     while (tokens.length <= limit) {
         // calculate max context
@@ -71,50 +69,12 @@ function markov(seed, recall, limit, type, trackOwner = false) {
         if (!match) break;
 
         // get a ptr to the prediction
-        const continuationContextForToken = tokenId => {
-            const nextTokens = [
-                ...tokens.slice(Math.max(0, tokens.length - context + 1)),
-                model.token(tokenId)[0]
-            ];
-            const nextContext = nextTokens.join('');
-            const variants = [
-                nextContext,
-                nextContext.toLowerCase(),
-                nextContext.trim(),
-                nextContext.toLowerCase().trim(),
-                ' ' + nextContext,
-                ' ' + nextContext.toLowerCase()
-            ];
-
-            for (const variant of variants) {
-                const contextId = model.id(variant);
-                if (contextId !== null) return contextId;
-            }
-
-            return null;
-        };
-
-        const previousTokenId = model.id(tokens[tokens.length - 1]);
-        const prediction = trackOwner
-            ? model.predictWithOwner(id, type, activeOwner, continuationContextForToken, sourceStickiness, previousTokenId)
-            : model.predict(id, type, previousTokenId);
+        const prediction = model.predict(id, type);
 
         // if not null (prediction will always return null if there isn't one), then add the token value to the tokens
         if (prediction !== null) {
-            const tokenId = trackOwner ? prediction.token : prediction;
-            const token = model.token(tokenId);
-            tokens.push(token[0]);
-            raw.push(trackOwner ? [token[0], [prediction.owner]] : token);
-            if (trackOwner && activeOwner !== null && activeOwner !== prediction.owner) {
-                for (let i = Math.max(0, raw.length - context - 1); i < raw.length - 1; i++) {
-                    const previousToken = Array.isArray(raw[i]) ? raw[i][0] : raw[i];
-                    const previousTokenId = model.id(previousToken);
-                    if (model.token(previousTokenId)?.[1].includes(prediction.owner)) {
-                        raw[i] = [previousToken, [prediction.owner]];
-                    }
-                }
-            }
-            if (trackOwner) activeOwner = prediction.owner;
+            tokens.push(model.token(prediction)[0]);
+            raw.push(model.token(prediction));
         } else {
             // if the prediction is null, there is no prediction. break NOW
             break;
@@ -139,13 +99,12 @@ async function generate(interaction) {
     const colored = interaction.options.getBoolean('show_owner') ?? false;
     const limit = interaction.options.getInteger('tokens') ?? 50;
 
-    const tokens = markov(seed, context, limit, type, colored);
+    const tokens = markov(seed, context, limit, type);
 
     if (colored) {
         const codeblock = '\`\`\`'
 
         let string = '';
-        let activeColor = null;
 
         for (const token of tokens) {
             if (Array.isArray(token)) {
@@ -157,16 +116,10 @@ async function generate(interaction) {
                     const rgb = hexToRgb(model.owners[token[1][0]][0]);
                     string += `${getANSI(rgb[0], rgb[1], rgb[2])}${token[0]}`
                 }
-                string += token[0];
             } else {
-                if (activeColor !== null) {
-                    string += resetANSI();
-                    activeColor = null;
-                }
-                string += token;
+                string += `${resetANSI()}${token}`;
             }
         }
-        if (activeColor !== null) string += resetANSI();
         interaction.reply({ content: `${codeblock}ansi\n${string}${codeblock}`, allowedMentions: { parse: [] } });
     } else {
         const array = tokens.map((token) => {
@@ -222,7 +175,7 @@ async function owner(interaction) {
 
 async function key(interaction) {
     let text = '';
-    const codeblock = '\`\`\`'
+    const codeblock = '\`\`\`';
 
     for (const owner of model.owners) {
         const rgb = hexToRgb(owner[0]);
