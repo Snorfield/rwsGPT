@@ -146,7 +146,7 @@ async function owner(interaction) {
         const owners = token[1];
         let text = '';
         for (let i = 0; i < owners.length; i++) {
-            text += `${(i === owners.length - 1) ? 'and ' : ''}${model.owners[owners[i]][1]}${(i === owners.length - 1) ? '' : ', '}`;
+            text += `${(i === owners.length - 1 && owners.length > 1) ? 'and ' : ''}${model.owners[owners[i]][1]}${(i === owners.length - 1) ? '' : ', '}`;
         }
         return `${variant ? 'That doesn\'t exist but I found something similar.\n' : ''}\`${token[0]}\` was contributed by ${text}`;
     }
